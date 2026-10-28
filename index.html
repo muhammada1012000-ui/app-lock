@@ -177,7 +177,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--brass); out
     <span class="pill" id="stateTag"><span class="dot"></span><span id="stateText">Ready</span></span>
   </div>
 
-  <p class="offline" id="offline" hidden><svg width="22" height="22"><use href="#i-lock"/></svg><span>App Lock isn't running. Open it from the <b>App Lock</b> shortcut on your desktop.</span></p>
+  <p class="offline" id="offline" hidden><svg width="22" height="22"><use href="#i-lock"/></svg><span><b>App Lock needs its helper on this PC.</b> It closes the apps, because a web page can't do that by itself. One-time setup: <a href="https://github.com/muhammada1012000-ui/app-lock#install" style="color:inherit">download App Lock and run Install.ps1</a>. If Edge asked to allow access to devices on your network, click <b>Allow</b> and reload this page.</span></p>
 
   <div class="grid" id="grid">
     <aside class="dial-card">
@@ -285,8 +285,9 @@ try {
 } catch (e) {}
 function save() { try { localStorage.setItem("applock", JSON.stringify({ picked: picked, custom: custom, h: $("hrs").value, m: $("mins").value, total: lockTotal })); } catch (e) {} }
 
+var API_BASE = location.hostname === "localhost" ? "" : "http://localhost:8765";
 function api(path, body) {
-  return fetch("/api/" + path, {
+  return fetch(API_BASE + "/api/" + path, {
     method: body ? "POST" : "GET",
     headers: { "X-AppLock": "1", "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined

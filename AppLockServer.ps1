@@ -5,6 +5,8 @@ param([switch]$NoBrowser)
 $port = 8765
 $url  = "http://localhost:$port/"
 $root = Split-Path -Parent $PSCommandPath
+# Pages allowed to control the helper: the local page and the GitHub Pages copy
+$allowedOrigins = @("http://localhost:$port", 'https://muhammada1012000-ui.github.io')
 
 # Never allow locking these, or Windows itself stops working
 $protected = @('explorer','powershell','pwsh','svchost','csrss','winlogon','wininit','dwm','lsass','services','smss','System','Idle','Taskmgr','ShellExperienceHost','StartMenuExperienceHost','SearchHost','sihost','ctfmon','conhost')
@@ -74,7 +76,21 @@ function Handle($ctx) {
     # API calls must come from the App Lock page itself, not from other websites
     if ($path -like '/api/*') {
         $origin = $req.Headers['Origin']
-        if ($req.Headers['X-AppLock'] -ne '1' -or ($origin -and $origin -ne "http://localhost:$port")) {
+        if ($origin -and $allowedOrigins -notcontains $origin) {
+            Send-Json $ctx 403 @{ error = 'Not allowed.' }; return
+        }
+        if ($origin) {
+            $ctx.Response.Headers.Add('Access-Control-Allow-Origin', $origin)
+            $ctx.Response.Headers.Add('Vary', 'Origin')
+        }
+        if ($req.HttpMethod -eq 'OPTIONS') {
+            $ctx.Response.Headers.Add('Access-Control-Allow-Methods', 'GET, POST')
+            $ctx.Response.Headers.Add('Access-Control-Allow-Headers', 'X-AppLock, Content-Type')
+            $ctx.Response.Headers.Add('Access-Control-Allow-Private-Network', 'true')
+            $ctx.Response.Headers.Add('Access-Control-Max-Age', '600')
+            $ctx.Response.StatusCode = 204; $ctx.Response.Close(); return
+        }
+        if ($req.Headers['X-AppLock'] -ne '1') {
             Send-Json $ctx 403 @{ error = 'Not allowed.' }; return
         }
     }
@@ -104,11 +120,7 @@ function Handle($ctx) {
 
 while ($true) {
     $task = $listener.GetContextAsync()
-    while (-not $task.Wait(1000)) {
-        Enforce
-        # Shut down quietly when nothing is locked and the page has been closed for a while
-        if (-not $S.locked -and ((Get-Date) - $S.lastHit).TotalMinutes -gt 10) { $listener.Stop(); exit }
-    }
+    while (-not $task.Wait(1000)) { Enforce }
     $ctx = $task.Result
     $S.lastHit = Get-Date
     try { Handle $ctx } catch { try { Send-Json $ctx 500 @{ error = $_.Exception.Message } } catch {} }
