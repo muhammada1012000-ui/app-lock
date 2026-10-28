@@ -2,7 +2,7 @@
 
 Lock distracting apps on Windows for a set amount of time. Pick the apps, choose how long, and any of those apps closes as soon as it opens until the timer runs out.
 
-**Open App Lock: https://muhammada1012000-ui.github.io/app-lock/**
+**Open App Lock: https://muhammada1012000-ui.github.io/app-lock/** (works in Microsoft Edge and Google Chrome)
 
 ## Install (one time)
 
@@ -10,7 +10,7 @@ A web page can't close programs on your PC by itself, so App Lock uses a small h
 
 1. Download this repository (**Code → Download ZIP**) and unzip it somewhere you'll keep it, for example `C:\Users\<you>\AppLock`.
 2. Right-click `Install.ps1` → **Run with PowerShell**.
-3. App Lock opens in Edge. If Edge asks to let the site access devices on your local network, click **Allow**. That's how the page talks to the helper on your PC.
+3. App Lock opens in your default browser. If Edge or Chrome asks to let the site access devices on your local network, click **Allow**. That's how the page talks to the helper on your PC.
 
 After that, the helper starts by itself, hidden, every time you sign in to Windows. Just open the link above whenever you want to lock apps.
 
@@ -47,5 +47,5 @@ Press <kbd>Win</kbd>+<kbd>R</kbd>, type `shell:startup`, press Enter, and delete
 ## Limits
 
 - The lock ends if you restart or log out, or if you end **Windows PowerShell** in Task Manager.
-- If you lock Microsoft Edge, the App Lock page closes too, but the lock keeps running.
+- If you lock the browser you're using (Edge or Chrome), the App Lock page closes too, but the lock keeps running. Open App Lock in the other browser to see the timer.
 - Windows only.

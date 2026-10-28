@@ -1,5 +1,5 @@
-# App Lock (Edge version) - a tiny helper that runs on this PC only.
-# It shows the App Lock page in Edge at http://localhost:8765 and closes locked apps until the timer ends.
+# App Lock helper - a tiny server that runs on this PC only.
+# It lets the App Lock page (in Edge or Chrome) lock apps, and closes locked apps until the timer ends.
 param([switch]$NoBrowser)
 
 $port = 8765
@@ -13,7 +13,7 @@ $protected = @('explorer','powershell','pwsh','svchost','csrss','winlogon','wini
 
 function Open-Page {
     if ($NoBrowser) { return }
-    try { Start-Process 'msedge.exe' $url -ErrorAction Stop } catch { Start-Process "microsoft-edge:$url" }
+    Start-Process $url   # default browser
 }
 
 $listener = New-Object System.Net.HttpListener

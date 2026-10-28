@@ -1,5 +1,5 @@
 # Sets up App Lock's helper to start hidden every time you sign in to Windows, and starts it now.
-# Then open App Lock in Edge: https://muhammada1012000-ui.github.io/app-lock/
+# Then open App Lock in Edge or Chrome: https://muhammada1012000-ui.github.io/app-lock/
 $here    = Split-Path -Parent $PSCommandPath
 $server  = Join-Path $here 'AppLockServer.ps1'
 $startup = [Environment]::GetFolderPath('Startup')
@@ -16,6 +16,6 @@ $lnk.Save()
 Remove-Item (Join-Path ([Environment]::GetFolderPath('Desktop')) 'App Lock.lnk') -ErrorAction SilentlyContinue
 
 Start-Process powershell -WindowStyle Hidden -ArgumentList $helperArgs
-try { Start-Process 'msedge.exe' 'https://muhammada1012000-ui.github.io/app-lock/' -ErrorAction Stop }
-catch { Start-Process 'https://muhammada1012000-ui.github.io/app-lock/' }
+# Opens in your default browser (Edge, Chrome, ...)
+Start-Process 'https://muhammada1012000-ui.github.io/app-lock/'
 Write-Host 'Done. App Lock is open in your browser, and its helper now starts by itself when you sign in.' -ForegroundColor Green

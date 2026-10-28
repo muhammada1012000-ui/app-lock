@@ -177,7 +177,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--brass); out
     <span class="pill" id="stateTag"><span class="dot"></span><span id="stateText">Ready</span></span>
   </div>
 
-  <p class="offline" id="offline" hidden><svg width="22" height="22"><use href="#i-lock"/></svg><span><b>App Lock needs its helper on this PC.</b> It closes the apps, because a web page can't do that by itself. One-time setup: <a href="https://github.com/muhammada1012000-ui/app-lock#install" style="color:inherit">download App Lock and run Install.ps1</a>. If Edge asked to allow access to devices on your network, click <b>Allow</b> and reload this page.</span></p>
+  <p class="offline" id="offline" hidden><svg width="22" height="22"><use href="#i-lock"/></svg><span><b>App Lock needs its helper on this PC.</b> It closes the apps, because a web page can't do that by itself. One-time setup: <a href="https://github.com/muhammada1012000-ui/app-lock#install" style="color:inherit">download App Lock and run Install.ps1</a>. If your browser asked to allow access to devices on your network, click <b>Allow</b> and reload this page.</span></p>
 
   <div class="grid" id="grid">
     <aside class="dial-card">
@@ -203,7 +203,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--brass); out
       </div>
       <p class="until" id="until"></p>
       <div class="tags" id="tags"></div>
-      <p class="warnbox" id="edgeWarn" hidden>Microsoft Edge is picked, so this page will close too. The lock still runs.</p>
+      <p class="warnbox" id="edgeWarn" hidden></p>
       <button class="btn-start" id="startBtn" type="button"><svg width="18" height="18"><use href="#i-lock"/></svg>Start lock</button>
       <p class="closing-note" id="closingNote" hidden>You can close this tab. The lock keeps running in the background.</p>
       <p class="msg" id="msg" role="status"></p>
@@ -285,7 +285,11 @@ try {
 } catch (e) {}
 function save() { try { localStorage.setItem("applock", JSON.stringify({ picked: picked, custom: custom, h: $("hrs").value, m: $("mins").value, total: lockTotal })); } catch (e) {} }
 
-var API_BASE = location.hostname === "localhost" ? "" : "http://localhost:8765";
+// The browser showing this page, so we can warn before it locks itself
+var THIS_BROWSER = /Edg\//.test(navigator.userAgent) ? { n: "Microsoft Edge", p: "msedge" }
+  : /Firefox\//.test(navigator.userAgent) ? { n: "Firefox", p: "firefox" }
+  : { n: "Google Chrome", p: "chrome" };
+var API_BASE =location.hostname === "localhost" ? "" : "http://localhost:8765";
 function api(path, body) {
   return fetch(API_BASE + "/api/" + path, {
     method: body ? "POST" : "GET",
@@ -403,7 +407,8 @@ function sync() {
   setArc(mins / 180);
   fillTags($("tags"), list);
   $("count").innerHTML = list.length ? "<b>" + list.length + "</b> picked" : "None picked";
-  $("edgeWarn").hidden = !picked["msedge"];
+  $("edgeWarn").hidden = !picked[THIS_BROWSER.p];
+  $("edgeWarn").textContent = THIS_BROWSER.n + " is picked, so this page will close too. The lock still runs.";
   $("startBtn").hidden = false;
   $("startBtn").disabled = !list.length || !mins;
   document.querySelectorAll(".preset").forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.m === mins)); });
