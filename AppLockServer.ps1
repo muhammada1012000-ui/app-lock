@@ -72,11 +72,18 @@ function Handle($ctx) {
         Send $ctx 200 'text/html; charset=utf-8' ([IO.File]::ReadAllText((Join-Path $root 'index.html')))
         return
     }
+    $static = @{ '/extension/app.css' = 'text/css; charset=utf-8'; '/extension/app.js' = 'text/javascript; charset=utf-8' }
+    if ($req.HttpMethod -eq 'GET' -and $static.ContainsKey($path)) {
+        Send $ctx 200 $static[$path] ([IO.File]::ReadAllText((Join-Path $root $path.TrimStart('/'))))
+        return
+    }
 
     # API calls must come from the App Lock page itself, not from other websites
     if ($path -like '/api/*') {
         $origin = $req.Headers['Origin']
-        if ($origin -and $allowedOrigins -notcontains $origin) {
+        # The App Lock browser extension (Chrome and Edge) also counts as allowed
+        $isExtension = $origin -like 'chrome-extension://*' -or $origin -like 'extension://*'
+        if ($origin -and $allowedOrigins -notcontains $origin -and -not $isExtension) {
             Send-Json $ctx 403 @{ error = 'Not allowed.' }; return
         }
         if ($origin) {

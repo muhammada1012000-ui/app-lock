@@ -20,6 +20,15 @@ If Windows blocks the script, open PowerShell in the folder and run:
 powershell -ExecutionPolicy Bypass -File .\Install.ps1
 ```
 
+## Chrome extension
+
+App Lock is also a browser extension, so it sits in your toolbar. It works in Google Chrome and Microsoft Edge, and it uses the same helper as the website, so run `Install.ps1` first.
+
+1. In Chrome, go to `chrome://extensions` (in Edge: `edge://extensions`).
+2. Turn on **Developer mode**.
+3. Click **Load unpacked** and choose the `extension` folder inside App Lock.
+4. Click the puzzle-piece icon in the toolbar and pin **App Lock**.
+
 ## Features
 
 - Pick from popular apps (Discord, Steam, Roblox, Spotify, Chrome and more), apps you have open right now, or any app by name
@@ -33,7 +42,8 @@ powershell -ExecutionPolicy Bypass -File .\Install.ps1
 
 | File | What it does |
 | --- | --- |
-| `index.html` | The page you see. It's hosted on GitHub Pages and also served by the helper at `http://localhost:8765`. |
+| `index.html` | The website. It's hosted on GitHub Pages and also served by the helper at `http://localhost:8765`. |
+| `extension/` | The Chrome/Edge extension. `app.js` and `app.css` in here are shared by the website and the extension. |
 | `AppLockServer.ps1` | The helper. It runs hidden in the background and closes locked apps every second until the timer ends. |
 | `Install.ps1` | Makes the helper start when you sign in, starts it now, and opens App Lock. |
 | `AppLock.ps1` | An alternative version with its own window instead of a browser page. Run it with `powershell -ExecutionPolicy Bypass -File .\AppLock.ps1`. |
