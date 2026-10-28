@@ -160,3 +160,44 @@ html.popup .brand-mark { width: 34px; height: 34px; border-radius: 10px; }
 html.popup .panel { padding: 16px; }
 html.popup .apps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 html.popup .presets { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* Touch screens and tablets (Android, iPad, Windows touch) */
+body { -webkit-tap-highlight-color: transparent; }
+@media (hover: none) {
+  .app label:hover { transform: none; border-color: transparent; }
+  .app input:checked + label:hover { border-color: var(--brass); }
+  .btn-start:hover:not(:disabled) { transform: none; }
+}
+@media (pointer: coarse) {
+  body { background-attachment: scroll; }
+  .btn, .preset { min-height: 48px; }
+  .stepper button { width: 52px; height: 52px; font-size: 22px; }
+  .stepper input { width: 52px; font-size: 19px; }
+  .field input { padding: 14px 0; font-size: 16px; }
+  .app label { padding: 16px 8px 14px; }
+  .apps { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); }
+}
+/* Tablet portrait: dial beside the summary instead of a tall stack */
+@media (min-width: 600px) and (max-width: 880px) {
+  .dial-card { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "dial until" "dial tags" "dial warn" "dial start" "dial note" "dial msg"; align-items: center; column-gap: 24px; row-gap: 10px; }
+  .dial-card .dial { grid-area: dial; width: 240px; }
+  .dial-card .until { grid-area: until; text-align: left; }
+  .dial-card .tags { grid-area: tags; justify-content: flex-start; }
+  .dial-card .warnbox { grid-area: warn; }
+  .dial-card .btn-start { grid-area: start; }
+  .dial-card .closing-note { grid-area: note; text-align: left; }
+  .dial-card .msg { grid-area: msg; text-align: left; }
+  body.locked-mode .grid { grid-template-columns: minmax(0, 1fr); }
+  html.popup .dial-card { display: flex; }
+}
+@media (max-width: 420px) {
+  .presets { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .stepper-row .stepper { flex: 1 1 100%; justify-content: space-between; }
+}
+/* Real app icons (Android) */
+img.av { object-fit: cover; background: transparent !important; box-shadow: none; }
+/* Android setup card */
+.setup { display: flex; flex-direction: column; gap: 10px; background: rgba(232,168,74,.08); border: 1px solid rgba(232,168,74,.4); border-radius: 16px; padding: 16px 18px; }
+.setup b { color: var(--brass); }
+.setup p { margin: 0; color: var(--muted); }
+.setup .row { justify-content: flex-start; }

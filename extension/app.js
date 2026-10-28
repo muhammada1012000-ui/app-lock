@@ -1,5 +1,6 @@
-// App Lock - shared by the website (index.html) and the Chrome extension (popup.html).
-// Builds the page, then talks to the App Lock helper on this PC at localhost:8765.
+// App Lock - shared by the website (index.html), the Chrome extension (popup.html) and the Android app.
+// Builds the page, then talks to the App Lock helper: on Windows at localhost:8765,
+// inside the Android app through the app's private window.AppLockAndroid bridge.
 document.getElementById("app").innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="11" rx="3" fill="currentColor"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.4"/></symbol>
@@ -16,6 +17,14 @@ document.getElementById("app").innerHTML = `<svg width="0" height="0" style="pos
     </div>
     <span class="pill" id="stateTag"><span class="dot"></span><span id="stateText">Ready</span></span>
   </div>
+
+  <div class="setup" id="setup" hidden>
+    <p><b>One more step: turn on App Lock's blocking.</b> Android only lets apps block other apps through Accessibility. Tap the button, open <b>Installed apps → App Lock</b>, and switch it on.</p>
+    <p>If the switch is greyed out: go to Settings → Apps → App Lock, tap <b>⋮</b> (top right) → <b>Allow restricted settings</b>, then try again.</p>
+    <div class="row"><button class="btn" id="a11yBtn" type="button"><svg width="16" height="16"><use href="#i-lock"/></svg>Open Accessibility settings</button></div>
+  </div>
+
+  <p class="offline" id="offlineAndroid" hidden><svg width="22" height="22"><use href="#i-lock"/></svg><span><b>On Android, App Lock works through its app.</b> A browser can't block other apps, so blocking is done by the App Lock app. <a href="https://github.com/muhammada1012000-ui/app-lock/releases/download/android-latest/AppLock.apk" style="color:inherit">Download the App Lock app (APK)</a>, install it, then open it. <a href="intent://open#Intent;scheme=applock;package=io.github.muhammada1012000ui.applock;end" style="color:inherit">Already installed? Open App Lock.</a></span></p>
 
   <p class="offline" id="offline" hidden><svg width="22" height="22"><use href="#i-lock"/></svg><span><b>App Lock needs its helper on this PC.</b> It closes the apps, because a web page can't do that by itself. One-time setup: <a href="https://github.com/muhammada1012000-ui/app-lock#install" target="_blank" rel="noopener" style="color:inherit">download App Lock and run Install.ps1</a>. If your browser asked to allow access to devices on your network, click <b>Allow</b> and reload this page.</span></p>
 
@@ -55,9 +64,9 @@ document.getElementById("app").innerHTML = `<svg width="0" height="0" style="pos
           <h2><span class="num">1</span>Choose apps to lock</h2>
           <span class="count" id="count"></span>
         </div>
-        <p class="sub-h">Open right now</p>
+        <p class="sub-h" id="runningTitle">Open right now</p>
         <div class="apps" id="running"></div>
-        <p class="sub-h">Popular apps</p>
+        <p class="sub-h" id="commonTitle">Popular apps</p>
         <div class="apps" id="common"></div>
         <div class="row">
           <div class="field">
@@ -67,7 +76,7 @@ document.getElementById("app").innerHTML = `<svg width="0" height="0" style="pos
           <button class="btn" id="addBtn" type="button"><svg width="16" height="16"><use href="#i-plus"/></svg>Add</button>
           <button class="btn btn-ghost" id="refreshBtn" type="button"><svg width="16" height="16"><use href="#i-refresh"/></svg>Refresh</button>
         </div>
-        <p class="hint">Not listed? Open the app and click Refresh. Or find its name in Task Manager (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Esc</kbd>) → Details, and type it without “.exe”.</p>
+        <p class="hint" id="appsHint">Not listed? Open the app and click Refresh. Or find its name in Task Manager (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Esc</kbd>) → Details, and type it without “.exe”.</p>
       </section>
 
       <section class="panel">
@@ -112,6 +121,12 @@ var COMMON = [
   { n: "Valorant / Riot", p: "RiotClientServices", c: "#d13639" }, { n: "Fortnite", p: "FortniteClient-Win64-Shipping", c: "#8a45e6" },
   { n: "Xbox", p: "XboxPcApp", c: "#107C10" }, { n: "Teams", p: "ms-teams", c: "#5059C9" }, { n: "Slack", p: "slack", c: "#7c3085" }
 ];
+// Where this screen is running
+var BRIDGE = window.AppLockAndroid || null;   // only exists inside the Android app
+var IS_ANDROID_APP = !!BRIDGE;
+var IS_ANDROID_WEB = !BRIDGE && /Android/i.test(navigator.userAgent);
+var ICONS = {};                               // package name -> icon (Android app)
+if (IS_ANDROID_APP) COMMON = [];              // Android lists the apps actually installed instead
 var PALETTE = ["#3d7ea6", "#9a5bb5", "#c2563f", "#3f9a86", "#b5832a", "#5a6cc4", "#b04a77", "#4c8f3f"];
 var PRESETS = [15, 25, 45, 60, 90, 120, 180];
 var CIRC = 2 * Math.PI * 104;
@@ -129,7 +144,24 @@ var THIS_BROWSER = /Edg\//.test(navigator.userAgent) ? { n: "Microsoft Edge", p:
   : /Firefox\//.test(navigator.userAgent) ? { n: "Firefox", p: "firefox" }
   : { n: "Google Chrome", p: "chrome" };
 var API_BASE = location.hostname === "localhost" && location.port === "8765" ? "" : "http://localhost:8765";
+// Android app: requests go over a message channel the app only opens for its own built-in page
+var bridgeSeq = 0, bridgeWaiting = {};
+if (BRIDGE) BRIDGE.onmessage = function (e) {
+  var r = JSON.parse(e.data), w = bridgeWaiting[r.id];
+  if (!w) return;
+  delete bridgeWaiting[r.id];
+  if (r.error) w.reject(new Error(r.error)); else w.resolve(r.data);
+};
 function api(path, body) {
+  if (BRIDGE) {
+    return new Promise(function (resolve, reject) {
+      var id = ++bridgeSeq;
+      bridgeWaiting[id] = { resolve: resolve, reject: reject };
+      BRIDGE.postMessage(JSON.stringify({ id: id, path: path, body: body || null }));
+    });
+  }
+  // Android browsers can't reach a Windows helper; the page points to the Android app instead
+  if (IS_ANDROID_WEB) return Promise.reject(new Error("Use the App Lock app on Android."));
   return fetch(API_BASE + "/api/" + path, {
     method: body ? "POST" : "GET",
     headers: { "X-AppLock": "1", "Content-Type": "application/json" },
@@ -144,6 +176,11 @@ function colorFor(p) {
   return PALETTE[h % PALETTE.length];
 }
 function avatar(name, p) {
+  if (ICONS[p.toLowerCase()]) {
+    var img = document.createElement("img"); img.className = "av"; img.alt = "";
+    img.src = ICONS[p.toLowerCase()];
+    return img;
+  }
   var s = document.createElement("span"); s.className = "av";
   s.style.background = colorFor(p);
   s.textContent = (name.replace(/[^A-Za-z0-9]/g, "")[0] || "?").toUpperCase();
@@ -161,7 +198,8 @@ function appTile(a) {
   var label = d.querySelector("label");
   label.insertBefore(avatar(a.n, a.p), label.querySelector(".n"));
   d.querySelector(".n").textContent = a.n;
-  d.querySelector(".p").textContent = a.p + ".exe";
+  d.querySelector(".p").textContent = IS_ANDROID_APP ? a.p : a.p + ".exe";
+  d.dataset.search = (a.n + " " + a.p).toLowerCase();
   var cb = d.querySelector("input"); cb.checked = !!picked[a.p.toLowerCase()];
   cb.addEventListener("change", function () { picked[a.p.toLowerCase()] = cb.checked; sync(); });
   return d;
@@ -173,8 +211,9 @@ function renderApps() {
     var k = a.p.toLowerCase();
     return !commonSet[k] && arr.findIndex(function (b) { return b.p.toLowerCase() === k; }) === i;
   });
-  if (!extra.length) { var h = document.createElement("p"); h.className = "empty"; h.textContent = "No other open apps found. Open one and click Refresh."; r.appendChild(h); }
+  if (!extra.length) { var h = document.createElement("p"); h.className = "empty"; h.textContent = IS_ANDROID_APP ? "Loading your apps…" : "No other open apps found. Open one and click Refresh."; r.appendChild(h); }
   extra.forEach(function (a) { r.appendChild(appTile(a)); });
+  filterApps();
   var c = $("common"); c.innerHTML = "";
   COMMON.forEach(function (a) { c.appendChild(appTile(a)); });
 }
@@ -246,23 +285,34 @@ function sync() {
   setArc(mins / 180);
   fillTags($("tags"), list);
   $("count").innerHTML = list.length ? "<b>" + list.length + "</b> picked" : "None picked";
-  $("edgeWarn").hidden = !picked[THIS_BROWSER.p];
+  $("edgeWarn").hidden = IS_ANDROID_APP || !picked[THIS_BROWSER.p];
   $("edgeWarn").textContent = THIS_BROWSER.n + " is picked, so this page will close too. The lock still runs.";
   $("startBtn").hidden = false;
-  $("startBtn").disabled = !list.length || !mins;
+  $("startBtn").disabled = !list.length || !mins || (IS_ANDROID_APP && !server.ready);
   document.querySelectorAll(".preset").forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.m === mins)); });
 }
 
 function poll() {
   api("state").then(function (s) {
     var wasLocked = server.locked;
-    server = s; $("offline").hidden = true; $("grid").hidden = false;
+    server = s; $("offline").hidden = true; $("offlineAndroid").hidden = true; $("grid").hidden = false;
+    $("setup").hidden = !IS_ANDROID_APP || !!s.ready;
     if (wasLocked && !s.locked) { $("msg").className = "msg"; $("msg").textContent = "Time is up. Your apps are unlocked."; }
     sync();
-  }).catch(function () { $("offline").hidden = false; $("grid").hidden = true; });
+  }).catch(function () { $(IS_ANDROID_WEB ? "offlineAndroid" : "offline").hidden = false; $("grid").hidden = true; });
 }
 function loadRunning() {
-  api("running").then(function (r) { running = r.apps || []; renderApps(); sync(); }).catch(function () {});
+  api("running").then(function (r) {
+    running = r.apps || [];
+    running.forEach(function (a) { if (a.icon) ICONS[a.p.toLowerCase()] = a.icon; });
+    renderApps(); sync();
+  }).catch(function () {});
+}
+// Android: the text box searches the installed apps instead of adding one by name
+function filterApps() {
+  if (!IS_ANDROID_APP) return;
+  var q = $("customName").value.trim().toLowerCase();
+  document.querySelectorAll("#running .app").forEach(function (d) { d.hidden = q && d.dataset.search.indexOf(q) < 0; });
 }
 
 PRESETS.forEach(function (m) {
@@ -289,15 +339,31 @@ function addCustom() {
   renderApps(); sync();
 }
 $("addBtn").addEventListener("click", addCustom);
-$("customName").addEventListener("keydown", function (e) { if (e.key === "Enter") addCustom(); });
+$("customName").addEventListener("keydown", function (e) { if (e.key === "Enter" && !IS_ANDROID_APP) addCustom(); });
+$("customName").addEventListener("input", filterApps);
+$("a11yBtn").addEventListener("click", function () { api("openAccessibility", {}).catch(function () {}); });
+
+// Android app wording; computers keep the Windows wording above
+if (IS_ANDROID_APP) {
+  document.documentElement.classList.add("android-app");
+  $("runningTitle").textContent = "Installed apps";
+  $("commonTitle").hidden = true; $("common").hidden = true; $("addBtn").hidden = true;
+  $("customName").placeholder = "Search apps";
+  $("customName").setAttribute("aria-label", "Search apps");
+  $("appsHint").textContent = "Lists the apps on your home screen. App Lock, Settings and the phone app can't be locked.";
+  $("closingNote").textContent = "You can leave App Lock. The lock keeps running, even after a restart.";
+  $("refreshBtn").lastChild.textContent = "Reload";
+}
 $("refreshBtn").addEventListener("click", loadRunning);
 
 function closeConfirm() { $("confirm").hidden = true; $("startBtn").focus(); }
 $("startBtn").addEventListener("click", function () {
   var list = pickedList(), mins = totalMinutes();
   fillTags($("confirmTags"), list);
-  $("confirmText").textContent = "These apps will close right now and stay closed for " + niceLen(mins) +
-    ", until " + clock(new Date(Date.now() + mins * 60000)) + ". Save your work first. You can't unlock early from this page.";
+  var until = clock(new Date(Date.now() + mins * 60000));
+  $("confirmText").textContent = IS_ANDROID_APP
+    ? "For " + niceLen(mins) + ", until " + until + ", opening these apps sends you back to the home screen. You can't unlock early from App Lock."
+    : "These apps will close right now and stay closed for " + niceLen(mins) + ", until " + until + ". Save your work first. You can't unlock early from this page.";
   $("confirm").hidden = false; $("msg").textContent = ""; $("yesBtn").focus();
 });
 $("noBtn").addEventListener("click", closeConfirm);
