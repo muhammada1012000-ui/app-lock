@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="vault">#FF0B1518</color>
+    <color name="brass">#FFE8A84A</color>
+
+    <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/vault</item>
+        <item name="android:statusBarColor">@color/vault</item>
+        <item name="android:navigationBarColor">@color/vault</item>
+        <item name="android:colorAccent">@color/brass</item>
+    </style>
+</resources>

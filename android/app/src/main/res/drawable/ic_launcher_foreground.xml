@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher icon: dark padlock centered in the 72dp safe zone of a 108dp adaptive icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FF1D1206"
+        android:pathData="M41,51h26a5,5 0 0 1 5,5v18a5,5 0 0 1 -5,5h-26a5,5 0 0 1 -5,-5v-18a5,5 0 0 1 5,-5z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M44,51v-7a10,10 0 0 1 20,0v7"
+        android:strokeWidth="6"
+        android:strokeColor="#FF1D1206" />
+</vector>

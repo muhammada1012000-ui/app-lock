@@ -1,0 +1,51 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The app shows the same screen as the website and the extension:
+// copy the shared app.js and app.css from ../extension into the app's assets at build time.
+def sharedWebDir = layout.buildDirectory.dir('generated/sharedWeb').get().asFile
+def copySharedWeb = tasks.register('copySharedWeb', Copy) {
+    from(rootProject.file('../extension')) {
+        include 'app.js', 'app.css'
+    }
+    into(new File(sharedWebDir, 'web'))
+}
+
+android {
+    namespace 'io.github.muhammada1012000ui.applock'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'io.github.muhammada1012000ui.applock'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs += [sharedWebDir]
+        }
+    }
+}
+
+tasks.named('preBuild') {
+    dependsOn copySharedWeb
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+}
