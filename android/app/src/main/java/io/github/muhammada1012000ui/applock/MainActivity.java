@@ -23,11 +23,11 @@ import androidx.webkit.WebViewFeature;
 import java.util.Collections;
 
 /**
- * Shows the same App Lock screen as the website (app.js and app.css, bundled into the app)
+ * Shows the same App Lock screen as the website (its index.html, bundled into the app)
  * and connects it to the Android blocker through AppLockBridge.
  */
 public final class MainActivity extends Activity {
-    private static final String START_URL = AppLockBridge.ORIGIN + "/assets/web/index.html";
+    private static final String START_URL = AppLockBridge.ORIGIN + "/assets/app/index.html";
 
     private WebView web;
 

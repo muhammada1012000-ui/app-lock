@@ -1,16 +1,21 @@
 <!doctype html>
-<html lang="en" class="popup">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>App Lock</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@300;500&display=swap">
-<link rel="stylesheet" href="app.css">
+<style>
+  body { margin: 0; width: 420px; background: #0b1518; color: #eef3f2; font: 14px/1.5 "Segoe UI", system-ui, sans-serif; }
+  iframe { display: block; width: 420px; height: 600px; border: 0; }
+  #offline { padding: 20px; }
+  #offline b { color: #e8a84a; }
+  #offline a { color: inherit; }
+  [hidden] { display: none !important; }
+</style>
 </head>
 <body>
-<div id="app"></div>
-<script src="app.js"></script>
+<!-- The pop-up shows App Lock's single index.html, served by the App Lock helper on this PC. -->
+<iframe id="app" title="App Lock" hidden></iframe>
+<p id="offline" hidden><b>App Lock's helper isn't running on this PC.</b> It's what closes the apps. One-time setup: <a href="https://github.com/muhammada1012000-ui/app-lock#install" target="_blank" rel="noopener">download App Lock and run Install.ps1</a>.</p>
+<script src="popup.js"></script>
 </body>
 </html>

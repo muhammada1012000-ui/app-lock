@@ -69,12 +69,9 @@ function Handle($ctx) {
     $path = $req.Url.AbsolutePath
 
     if ($req.HttpMethod -eq 'GET' -and ($path -eq '/' -or $path -eq '/index.html')) {
+        # Only App Lock itself and the App Lock extension may show this page inside a frame
+        $ctx.Response.Headers.Add('Content-Security-Policy', "frame-ancestors 'self' chrome-extension: extension:")
         Send $ctx 200 'text/html; charset=utf-8' ([IO.File]::ReadAllText((Join-Path $root 'index.html')))
-        return
-    }
-    $static = @{ '/extension/app.css' = 'text/css; charset=utf-8'; '/extension/app.js' = 'text/javascript; charset=utf-8' }
-    if ($req.HttpMethod -eq 'GET' -and $static.ContainsKey($path)) {
-        Send $ctx 200 $static[$path] ([IO.File]::ReadAllText((Join-Path $root $path.TrimStart('/'))))
         return
     }
 

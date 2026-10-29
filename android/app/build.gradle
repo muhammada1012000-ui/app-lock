@@ -3,13 +3,13 @@ plugins {
 }
 
 // The app shows the same screen as the website and the extension:
-// copy the shared app.js and app.css from ../extension into the app's assets at build time.
+// copy App Lock's single index.html into the app's assets at build time.
 def sharedWebDir = layout.buildDirectory.dir('generated/sharedWeb').get().asFile
 def copySharedWeb = tasks.register('copySharedWeb', Copy) {
-    from(rootProject.file('../extension')) {
-        include 'app.js', 'app.css'
+    from(rootProject.file('..')) {
+        include 'index.html'
     }
-    into(new File(sharedWebDir, 'web'))
+    into(new File(sharedWebDir, 'app'))
 }
 
 android {

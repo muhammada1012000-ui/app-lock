@@ -1,0 +1,3 @@
+﻿# Count App Lock as an HTML project in GitHub's language bar.
+# The Android companion app (Java) is still in the repository; it just isn't counted.
+android/** linguist-vendored
